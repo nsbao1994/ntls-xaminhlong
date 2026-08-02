@@ -71,7 +71,7 @@
             <button class="menu-btn" id="menuBtn">☰ Menu</button>
             <div class="dropdown-content" id="dropdownMenu">
                 <a id="loginMenu">Đăng nhập Quản trị</a>
-                <a id="addMenu" style="display: none;">+ Thêm sách mới</a>
+                <a id="addMenu" style="display: none;">+ Thêm mới</a>
                 <a id="logoutMenu" style="display: none; color: red;">Đăng xuất</a>
             </div>
         </div>
@@ -112,11 +112,11 @@
             <h3 id="formTitle" style="margin-bottom: 15px;">Thêm Sách Mới</h3>
             <form id="bookForm">
                 <div class="form-group">
-                    <label>Tên sách:</label>
+                    <label>Tên liệt sĩ:</label>
                     <input type="text" id="inputTitle" required>
                 </div>
                 <div class="form-group">
-                    <label>Thông tin / Mô tả:</label>
+                    <label>Thông tin / Mô tả của liệt sĩ:</label>
                     <textarea id="inputDesc" rows="3" required></textarea>
                 </div>
                 <div class="form-group" style="flex-direction: row; gap: 10px;">
@@ -285,7 +285,7 @@
 
         document.getElementById('addMenu').addEventListener('click', () => {
             currentEditingId = null;
-            document.getElementById('formTitle').innerText = "Thêm Sách Mới";
+            document.getElementById('formTitle').innerText = "Thêm Mới";
             bookForm.reset();
             formModal.style.display = 'block';
         });
@@ -295,7 +295,7 @@
             currentEditingId = currentSelectedBook.id;
             currentEditingImgUrl = currentSelectedBook.imageUrl;
             
-            document.getElementById('formTitle').innerText = "Sửa Thông Tin Sách";
+            document.getElementById('formTitle').innerText = "Sửa Thông Tin Mộ Liệt Sĩ";
             document.getElementById('inputTitle').value = currentSelectedBook.title;
             document.getElementById('inputDesc').value = currentSelectedBook.description;
             document.getElementById('inputRow').value = currentSelectedBook.row;
@@ -332,7 +332,7 @@
                     alert("Cập nhật thành công!");
                 } else {
                     await addDoc(collection(db, "books"), bookData);
-                    alert("Thêm sách thành công!");
+                    alert("Thêm thành công!");
                 }
                 
                 formModal.style.display = 'none';
@@ -347,7 +347,7 @@
 
         // --- XÓA SÁCH ---
         document.getElementById('btnDelete').addEventListener('click', async () => {
-            if(confirm("Bạn có chắc chắn muốn xóa quyển sách này?")) {
+            if(confirm("Bạn có chắc chắn muốn xóa thông tin này?")) {
                 loadingOverlay.style.display = 'block';
                 try {
                     await deleteDoc(doc(db, "books", currentSelectedBook.id));
