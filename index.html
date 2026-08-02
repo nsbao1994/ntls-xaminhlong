@@ -89,14 +89,14 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Phần hiển thị danh sách mộ */
+        /* Phần hiển thị nội dung & Tìm kiếm */
         .main-content { padding: 40px 20px; max-width: 1200px; margin: auto; }
         .main-content h2 {
             text-align: center;
             color: var(--primary-dark);
             font-size: 24px;
             letter-spacing: 1px;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
             text-transform: uppercase;
             border-bottom: 2px solid var(--primary-gold);
             display: table;
@@ -105,6 +105,46 @@
             padding-bottom: 10px;
         }
 
+        /* Khung Tìm Kiếm */
+        .search-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 16px 20px;
+            border-radius: 6px;
+            margin-bottom: 35px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            align-items: center;
+            justify-content: center;
+        }
+        .search-group { flex: 2; min-width: 220px; }
+        .search-group input { width: 100%; }
+        .search-group-row-col { display: flex; gap: 8px; flex: 1; min-width: 185px; }
+        .search-group-row-col input { width: 100%; }
+        
+        .search-box input {
+            padding: 9px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            background: #faf9f6;
+            outline: none;
+            transition: var(--transition-smooth);
+        }
+        .search-box input:focus {
+            border-color: var(--primary-gold);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(184, 151, 83, 0.15);
+        }
+        .search-actions { display: flex; gap: 8px; }
+        .btn-search { background: var(--primary-dark); padding: 9px 18px; color: #fff; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; transition: var(--transition-smooth); }
+        .btn-search:hover { background: #330e0e; }
+        .btn-reset { background: #777; padding: 9px 15px; color: #fff; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; transition: var(--transition-smooth); }
+        .btn-reset:hover { background: #555; }
+
+        /* Lưới hiển thị mộ */
         .book-grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); 
@@ -238,6 +278,8 @@
             .modal-body { flex-direction: column; align-items: center; text-align: center; }
             .modal-info { align-items: center; width: 100%; }
             .action-btns { justify-content: center; }
+            .search-box { flex-direction: column; align-items: stretch; }
+            .search-group-row-col { width: 100%; }
         }
 
         /* Lớp phủ màn hình tải trang nhã */
@@ -276,6 +318,22 @@
 
     <main class="main-content">
         <h2>CÁC THÔNG TIN MỘ LIỆT SĨ</h2>
+        
+        <!-- Khung Tìm Kiếm Mới -->
+        <div class="search-box">
+            <div class="search-group">
+                <input type="text" id="searchName" placeholder="🔍 Nhập tên liệt sĩ cần tìm...">
+            </div>
+            <div class="search-group-row-col">
+                <input type="number" id="searchRow" placeholder="Hàng số">
+                <input type="number" id="searchCol" placeholder="Cột số">
+            </div>
+            <div class="search-actions">
+                <button class="btn-search" id="btnSearch">Tìm kiếm</button>
+                <button class="btn-reset" id="btnReset">Tất cả</button>
+            </div>
+        </div>
+
         <div class="book-grid" id="bookGrid">
             <!-- Dữ liệu mộ liệt sĩ sẽ được load từ Firebase vào đây -->
         </div>
@@ -385,6 +443,7 @@
         let currentEditingId = null;
         let currentEditingImgUrl = "";
         let currentSelectedBook = null;
+        let allBooks = []; // Mảng lưu toàn bộ dữ liệu để phục vụ tìm kiếm
 
         // Xử lý Menu Dropdown
         document.getElementById('menuBtn').addEventListener('click', () => {
@@ -433,30 +492,79 @@
             }
         });
 
-        // Load dữ liệu từ Firestore
+        // Load dữ liệu từ Firestore và lưu vào bộ nhớ đệm allBooks
         async function loadBooks() {
             bookGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 20px;">Đang tải dữ liệu tưởng niệm...</div>';
             try {
                 const querySnapshot = await getDocs(collection(db, "books"));
-                bookGrid.innerHTML = '';
+                allBooks = [];
                 querySnapshot.forEach((doc) => {
                     const book = doc.data();
                     book.id = doc.id;
-                    renderBookCard(book);
+                    allBooks.push(book);
                 });
+                displayBooks(allBooks);
             } catch (error) {
                 bookGrid.innerHTML = '<b style="color:red; grid-column: 1/-1; text-align: center;">Lỗi tải dữ liệu từ hệ thống.</b>';
                 console.error(error);
             }
         }
 
+        // Hàm hiển thị danh sách lên màn hình
+        function displayBooks(booksList) {
+            bookGrid.innerHTML = '';
+            if (booksList.length === 0) {
+                bookGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 30px;">Không tìm thấy thông tin mộ liệt sĩ phù hợp.</div>';
+                return;
+            }
+            booksList.forEach((book) => {
+                renderBookCard(book);
+            });
+        }
+
         function renderBookCard(book) {
             const card = document.createElement('div');
             card.className = 'book-card';
-            card.innerHTML = `<img src="${book.imageUrl}" alt="${book.title}"><h4>${book.title}</h4>`;
+            card.innerHTML = `<img src="${book.imageUrl}" alt="${book.title}"><h4>${book.title}</h4><p style="font-size: 12px; color: #666; margin-top: 4px;">Hàng: ${book.row} - Cột: ${book.col}</p>`;
             card.addEventListener('click', () => openDetailModal(book));
             bookGrid.appendChild(card);
         }
+
+        // Xử lý sự kiện Tìm kiếm
+        document.getElementById('btnSearch').addEventListener('click', () => {
+            const keyword = document.getElementById('searchName').value.trim().toLowerCase();
+            const searchRow = document.getElementById('searchRow').value.trim();
+            const searchCol = document.getElementById('searchCol').value.trim();
+
+            const filtered = allBooks.filter(book => {
+                const matchName = keyword === "" || (book.title && book.title.toLowerCase().includes(keyword));
+                const matchRow = searchRow === "" || String(book.row) === searchRow;
+                const matchCol = searchCol === "" || String(book.col) === searchCol;
+
+                let isValid = true;
+                if (keyword !== "" && !matchName) isValid = false;
+                if (searchRow !== "" && !matchRow) isValid = false;
+                if (searchCol !== "" && !matchCol) isValid = false;
+                return isValid;
+            });
+
+            displayBooks(filtered);
+        });
+
+        // Xử lý sự kiện Đặt lại (Reset tìm kiếm)
+        document.getElementById('btnReset').addEventListener('click', () => {
+            document.getElementById('searchName').value = "";
+            document.getElementById('searchRow').value = "";
+            document.getElementById('searchCol').value = "";
+            displayBooks(allBooks);
+        });
+
+        // Hỗ trợ nhấn phím Enter để tìm kiếm nhanh
+        ['searchName', 'searchRow', 'searchCol'].forEach(id => {
+            document.getElementById(id).addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') document.getElementById('btnSearch').click();
+            });
+        });
 
         // Modal Chi Tiết
         const detailModal = document.getElementById('detailModal');
